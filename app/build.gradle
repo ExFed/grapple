@@ -1,0 +1,11 @@
+plugins {
+    id 'com.columnzero.grapple.groovy-application-conventions'
+}
+
+dependencies {
+    implementation project(':lib')
+}
+
+application {
+    mainClass = 'com.columnzero.grapple.Main'
+}

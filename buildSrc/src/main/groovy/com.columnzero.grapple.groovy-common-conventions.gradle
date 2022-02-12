@@ -1,0 +1,25 @@
+plugins {
+    id 'groovy'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    constraints {
+        implementation 'org.apache.groovy:groovy-all:4.0.0'
+    }
+
+    implementation(platform 'org.apache.groovy:groovy-all')
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

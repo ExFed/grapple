@@ -1,0 +1,4 @@
+plugins {
+    id 'com.columnzero.grapple.groovy-common-conventions'
+    id 'application'
+}
