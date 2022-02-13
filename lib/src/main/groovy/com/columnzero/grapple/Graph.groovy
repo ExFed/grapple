@@ -1,11 +1,13 @@
 package com.columnzero.grapple
 
 import groovy.transform.*
+import java.net.URLEncoder
 
+@CompileStatic
 class Graph {
 
-    private static final def GRAPH_URI = URI.create('grapple://graph/')
-    private static final def SET_CTOR = { [] as Set }
+    private static final URI GRAPH_URI = URI.create('grapple://graph/')
+    private static final Closure<Set<Edge>> SET_CTOR = { [] as Set<Edge> }
 
     private final Map<URI, Object> data = [:] // uri -> data
     private final Map<URI, Node> nodes = [:].withDefault{ k -> new Node(asUri(k))} // uri -> node
@@ -18,37 +20,37 @@ class Graph {
     private final Map<URI, Set<Edge>> rIndex = [:].withDefault(SET_CTOR) // r -> [edge]
     private final Map<URI, Set<Edge>> tIndex = [:].withDefault(SET_CTOR) // t -> [edge]
 
-    def asUri(def key) {
+    URI asUri(Object key) {
         def keyUri = switch (key.getClass()) {
-            case URI: yield key
-            case URL: yield key.toURI()
-            case Node: yield key.uri
-            case Edge: yield key.relation
-            case String: yield "${java.net.URLEncoder.encode(key)}/"
+            case URI: yield (URI) key
+            case URL: yield ((URL) key).toURI()
+            case Node: yield ((Node) key).uri
+            case Edge: yield ((Edge) key).relation
+            case String: yield URI.create(URLEncoder.encode((String) key) + '/')
             default: throw new IllegalArgumentException("unsupported key type: ${key.getClass()}")
         }
         this.uri.resolve(keyUri)
     }
 
-    def getUri() { GRAPH_URI }
+    URI getUri() { GRAPH_URI }
 
-    def node(def key) {
+    Node node(def key) {
         def uri = asUri(key)
         uri in nodes ? nodes[uri] : node(uri, null)
     }
 
-    def node(def key, def data) {
+    Node node(def key, def data) {
         def n = new Node(asUri(key))
         n.data = data
         nodes[n.uri] = n
     }
 
-    def edge(def s, def r, def t) {
+    Edge edge(Object s, Object r, Object t) {
         def e = new Edge(asUri(s), asUri(r), asUri(t))
         edge(e)
     }
 
-    def edge(Edge e) {
+    Edge edge(Edge e) {
         if (e !in edges) {
             edges << e
             srIndex[[e.s, e.r]] << e
@@ -61,19 +63,19 @@ class Graph {
         return e
     }
 
-    def leftShift(def key) { node(key) }
+    Node leftShift(def key) { node(key) }
 
-    def getRelationships(def relation) { rIndex[asUri(relation)] }
+    Set<Edge> getRelationships(def relation) { rIndex[asUri(relation)].asUnmodifiable() }
 
     @Immutable
     @ToString(includes = ['uri'])
     class Node {
         URI uri
 
-        def getData() { Graph.this.data[uri] }
-        def setData(def value) { Graph.this.data[uri] = value }
+        Object getData() { Graph.this.data[uri] }
+        Object setData(Object value) { Graph.this.data[uri] = value }
 
-        def rightShift(def r) { new EdgeBuilder(uri, r) }
+        EdgeBuilder rightShift(def r) { new EdgeBuilder(uri, r) }
     }
 
     @Immutable
@@ -90,15 +92,15 @@ class Graph {
         Node getSourceNode() { nodes[s] }
         Node getTargetNode() { nodes[t] }
 
-        def getData() { Graph.this.data[r] }
-        def setData(def value) { Graph.this.data[r] = value }
+        Object getData() { Graph.this.data[r] }
+        Object setData(def value) { Graph.this.data[r] = value }
     }
 
     @Canonical
     class EdgeBuilder {
-        final def source
-        final def relation
+        final Object source
+        final Object relation
 
-        def rightShift(def target) { edge(source, relation, target) }
+        Edge rightShift(Object target) { edge(source, relation, target) }
     }
 }
