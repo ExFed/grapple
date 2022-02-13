@@ -12,6 +12,9 @@ dependencies {
     }
 
     implementation(platform 'org.apache.groovy:groovy-all')
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'org.hamcrest:hamcrest:2.2'
 }
 
 java {
@@ -22,4 +25,7 @@ java {
 
 tasks.named('test') {
     useJUnitPlatform()
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
 }
