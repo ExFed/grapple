@@ -32,8 +32,8 @@ class GraphTest {
         def bob = g.node('bob')
 
         assertThat(edge, isA(Graph.Edge))
-        assertThat(edge.sourceNode, is(alice))
-        assertThat(edge.targetNode, is(bob))
+        assertThat(edge.source, is(alice))
+        assertThat(edge.target, is(bob))
         assertThat(g.getRelationships('knows'), hasItem(edge))
     }
 }

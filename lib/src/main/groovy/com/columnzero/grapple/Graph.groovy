@@ -25,7 +25,7 @@ class Graph {
             case URI: yield (URI) key
             case URL: yield ((URL) key).toURI()
             case Node: yield ((Node) key).uri
-            case Edge: yield ((Edge) key).relation
+            case Edge: yield ((Edge) key).relationUri
             case String: yield URI.create(URLEncoder.encode((String) key) + '/')
             default: throw new IllegalArgumentException("unsupported key type: ${key.getClass()}")
         }
@@ -34,12 +34,12 @@ class Graph {
 
     URI getUri() { GRAPH_URI }
 
-    Node node(def key) {
+    Node node(Object key) {
         def uri = asUri(key)
         uri in nodes ? nodes[uri] : node(uri, null)
     }
 
-    Node node(def key, def data) {
+    Node node(Object key, Object data) {
         def n = new Node(asUri(key))
         n.data = data
         nodes[n.uri] = n
@@ -65,7 +65,7 @@ class Graph {
 
     Node leftShift(def key) { node(key) }
 
-    Set<Edge> getRelationships(def relation) { rIndex[asUri(relation)].asUnmodifiable() }
+    Set<Edge> getRelationships(def relationUri) { rIndex[asUri(relationUri)].asUnmodifiable() }
 
     @Immutable
     @ToString(includes = ['uri'])
@@ -75,25 +75,25 @@ class Graph {
         Object getData() { Graph.this.data[uri] }
         Object setData(Object value) { Graph.this.data[uri] = value }
 
-        EdgeBuilder rightShift(def r) { new EdgeBuilder(uri, r) }
+        EdgeBuilder rightShift(Object r) { new EdgeBuilder(uri, r) }
     }
 
     @Immutable
-    @ToString(includes = ['source', 'relation', 'target'])
+    @ToString(includes = ['sourceUri', 'relationUri', 'targetUri'])
     class Edge {
-        URI source
-        URI relation
-        URI target
+        URI sourceUri
+        URI relationUri
+        URI targetUri
 
-        URI getS() { source }
-        URI getR() { relation }
-        URI getT() { target }
+        URI getS() { sourceUri }
+        URI getR() { relationUri }
+        URI getT() { targetUri }
 
-        Node getSourceNode() { nodes[s] }
-        Node getTargetNode() { nodes[t] }
+        Node getSource() { nodes[s] }
+        Node getTarget() { nodes[t] }
 
         Object getData() { Graph.this.data[r] }
-        Object setData(def value) { Graph.this.data[r] = value }
+        Object setData(Object value) { Graph.this.data[r] = value }
     }
 
     @Canonical
