@@ -26,14 +26,20 @@ class GraphTest {
     @Test
     void addEdges() {
 
-        def edge = g << 'alice' >> 'knows' >> 'bob'
+        def akb = g << 'alice' >> 'knows' >> 'bob'
+        akb.data = 'best friends'
+
+        def bka = g << 'bob' >> 'knows' >> 'alice'
+        bka.data = 'coworkers'
 
         def alice = g.node('alice')
         def bob = g.node('bob')
+        def knowsEdges = g.getRelationships('knows')
 
-        assertThat(edge, isA(Graph.Edge))
-        assertThat(edge.source, is(alice))
-        assertThat(edge.target, is(bob))
-        assertThat(g.getRelationships('knows'), hasItem(edge))
+        assertThat(akb, isA(Graph.Edge))
+        assertThat(akb.source, is(alice))
+        assertThat(akb.target, is(bob))
+        assertThat(knowsEdges, hasItems(akb, bka))
+        assertThat(knowsEdges*.data, hasItems('best friends', 'coworkers'))
     }
 }

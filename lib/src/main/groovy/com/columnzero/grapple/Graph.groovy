@@ -9,8 +9,7 @@ class Graph {
     private static final URI GRAPH_URI = URI.create('grapple://graph/')
     private static final Closure<Set<Edge>> SET_CTOR = { [] as Set<Edge> }
 
-    private final Map<URI, Object> data = [:] // uri -> data
-    private final Map<URI, Node> nodes = [:].withDefault{ k -> new Node(asUri(k))} // uri -> node
+    private final Map<Object, Object> data = [:] // (uri | [uri, uri, uri]) -> data
 
     private final Set<Edge> edges = [] as Set
     private final Map<Object, Set<Edge>> srIndex = [:].withDefault(SET_CTOR) // (s, r) -> [edge]
@@ -20,7 +19,7 @@ class Graph {
     private final Map<URI, Set<Edge>> rIndex = [:].withDefault(SET_CTOR) // r -> [edge]
     private final Map<URI, Set<Edge>> tIndex = [:].withDefault(SET_CTOR) // t -> [edge]
 
-    URI asUri(Object key) {
+    private URI asUri(Object key) {
         def keyUri = switch (key.getClass()) {
             case URI: yield (URI) key
             case URL: yield ((URL) key).toURI()
@@ -34,15 +33,12 @@ class Graph {
 
     URI getUri() { GRAPH_URI }
 
-    Node node(Object key) {
-        def uri = asUri(key)
-        uri in nodes ? nodes[uri] : node(uri, null)
-    }
+    Node node(Object key) { new Node(asUri(key)) }
 
     Node node(Object key, Object data) {
         def n = new Node(asUri(key))
         n.data = data
-        nodes[n.uri] = n
+        return n
     }
 
     Edge edge(Object s, Object r, Object t) {
@@ -63,23 +59,35 @@ class Graph {
         return e
     }
 
-    Node leftShift(def key) { node(key) }
+    Node leftShift(Object key) { node(key) }
 
-    Set<Edge> getRelationships(def relationUri) { rIndex[asUri(relationUri)].asUnmodifiable() }
+    Set<Edge> getRelationships(Object relationUri) { rIndex[asUri(relationUri)].asUnmodifiable() }
 
     @Immutable
     @ToString(includes = ['uri'])
+    @EqualsAndHashCode(includes = ['uri'])
     class Node {
         URI uri
+
+        Graph getGraph() { Graph.this }
 
         Object getData() { Graph.this.data[uri] }
         Object setData(Object value) { Graph.this.data[uri] = value }
 
         EdgeBuilder rightShift(Object r) { new EdgeBuilder(uri, r) }
+
+        String toString() { "Node($uri)" }
+        boolean equals(Object o) {
+            o === this || (
+                o instanceof Node
+                    && this.graph === o.graph
+                    && this.uri == o.uri
+            )
+        }
+        int hashCode() { Objects.hash(Node, uri) }
     }
 
     @Immutable
-    @ToString(includes = ['sourceUri', 'relationUri', 'targetUri'])
     class Edge {
         URI sourceUri
         URI relationUri
@@ -89,11 +97,25 @@ class Graph {
         URI getR() { relationUri }
         URI getT() { targetUri }
 
-        Node getSource() { nodes[s] }
-        Node getTarget() { nodes[t] }
+        Node getSource() { new Node(sourceUri) }
+        Node getTarget() { new Node(targetUri) }
 
-        Object getData() { Graph.this.data[r] }
-        Object setData(Object value) { Graph.this.data[r] = value }
+        Graph getGraph() { Graph.this }
+
+        Object getData() { graph.data[[s, r, t]] }
+        Object setData(Object value) { graph.data[[s, r, t]] = value }
+
+        String toString() { "Edge($s, $r, $t)" }
+        boolean equals(Object o) {
+            o === this || (
+                o instanceof Edge
+                    && this.graph === o.graph
+                    && this.s == o.s
+                    && this.r == o.r
+                    && this.t == o.t
+            )
+        }
+        int hashCode() { Objects.hash(Edge, s, r, t) }
     }
 
     @Canonical
