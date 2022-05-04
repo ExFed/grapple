@@ -118,3 +118,14 @@ println()
 printResults(results)
 println()
 println "==> total results: ${results.size()}"
+
+/* should print:
+
+giver | recipient | date    | gift
+======+===========+=========+===========
+Alice | Bob       | Sept 29 | Applesauce
+Bob   | Carol     | Feb 12  | Ice cream
+Carol | Alice     | June 3  | Pizza
+
+==> total results: 3
+*/
